@@ -27,9 +27,12 @@ def testBlobs():
 
     #Init midi 
     port = pygame.midi.get_default_output_id()
-    print ("using output_id :%s:" % port)
+    print("using output_id :%s:" % port)
     midi_out = pygame.midi.Output(port, 0)
     midi_out.set_instrument(0)
+    print("Midi initial setup successful. Going to play")
+
+    sleep(1)
 
     #Made thread reference so it can be shut down later
     playThread = None
@@ -41,12 +44,12 @@ def testBlobs():
             pimg = preprocessImage(img)
 
             #get dims
-            height, width = gimg.shape[:2]
+            height, width = pimg.shape[:2]
 
             #Find blobs
             blobs = getBlobs(pimg)
             drawBlobsAsCircles(img, blobs)
-            notes = shittyConvertBlobsToNotes(blobs, 10, 72, 83, width, height)
+            notes = shittyConvertBlobsToNotes(blobs, 6, 72, 83, width, height)
 
             #clear frame buffer
             rawCaptue.truncate(0)
@@ -62,7 +65,8 @@ def testBlobs():
             
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
- 
+    except Exception as err:
+        print(err)
     finally:
         playThread.join()
         del midi_out
