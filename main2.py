@@ -38,43 +38,38 @@ def application():
 
 def testBlobs():
     cv2.namedWindow("win")
-
-    #Load image
-    img = cv2.imread("test.png")
-    gimg = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-    
-    #get dims
-    height, width = gimg.shape[:2]
-
-    #Apply threshold
-    ret,thresh = cv2.threshold(gimg,127,255,0)
-    thresh = 255-thresh
-   
-    #Fill holes
-    kernel = np.ones((5,5), np.uint8)
-    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations = 3)
-
-    #Find blobs
-    blobs = getBlobs(thresh)
-    drawBlobsAsCircles(img, blobs)
+    cam = cv2.VideoCapture(0)
 
     #init pygame
     pygame.init()
     pygame.midi.init()
 
-    
+    #Init midi 
     port = pygame.midi.get_default_output_id()
     print ("using output_id :%s:" % port)
     midi_out = pygame.midi.Output(port, 0)
-   
+    midi_out.set_instrument(0)
+
+    #Made thread reference so it can be shut down later
     playThread = None
     try:
-        midi_out.set_instrument(0)
-
         while(1):
-            cv2.imshow("win", img)
+            #Load image
+            img = cam.read()
+            pimg = preprocessImage(img)
+
+            #get dims
+            height, width = gimg.shape[:2]
+
+            #Find blobs
+            blobs = getBlobs(pimg)
+            drawBlobsAsCircles(img, blobs)
             notes = shittyConvertBlobsToNotes(blobs, 10, 72, 83, width, height)
 
+            #Draw image
+            cv2.imshow("win", img)
+
+            #Launch thread to play music
             if playThread == None or not playThread.isAlive():
                 playThread = threading.Thread(target=playNoteList, args = (notes,midi_out))
                 playThread.daemon = True
@@ -92,6 +87,17 @@ def testBlobs():
 #######################
 #Helpers
 #######################
+
+def preprocessImage(img):
+    gimg = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    #Threshold
+    ret, thresh = cv2.threshold(gimg, 127, 255, 0)
+    thresh = 255 - thresh
+
+    #Fill holes
+    kernel = np.ones((5,5), np.uint8)
+    return cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations = 3)
 
 #Returns a list [(time, note)...] sorted by time of ocurrence
 def convertBlobsToNotes(blobs, totalTime):
