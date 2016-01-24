@@ -34,6 +34,7 @@ def testBlobs():
     #Made thread reference so it can be shut down later
     playThread = None
     try:
+        print("Going to get frames from camera")
         for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
             #Load image
             img = frame.array
@@ -46,6 +47,9 @@ def testBlobs():
             blobs = getBlobs(pimg)
             drawBlobsAsCircles(img, blobs)
             notes = shittyConvertBlobsToNotes(blobs, 10, 72, 83, width, height)
+
+            #clear frame buffer
+            rawCaptue.truncate(0)
 
             #Draw image
             cv2.imshow("win", img)
