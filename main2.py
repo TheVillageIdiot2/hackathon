@@ -5,40 +5,21 @@ import pygame
 import pygame.midi
 import numpy as np
 import datetime
+from picamera import PiCamera
+from picamera.array import PiRGBArray
 
 def nothing(x):
     pass
 
-def application():
-    cv2.namedWindow("win")
-    cam = cv2.VideoCapture(0)
-
-    cv2.createTrackbar('threshold', 'win', 10, 254, nothing)
-
-    while(1):
-        #Get frame from cam
-        ret, frame = cam.read()
-        #Make grayscale copy
-        grayframe = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
-
-        #Read threshold value
-        threshold = cv2.getTrackbarPos('threshold', 'win')+1
-        #Make threshold copy
-        ret,threshframe = cv2.threshold(grayframe,threshold,255,0)
-        
-        cv2.imshow("win", 255-threshframe)
-
-        if cv2.waitKey(1) & 0xFF == ord('c'):
-            print(getBlobs(threshframe))
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cv2.destroyAllWindows()
-
 def testBlobs():
     cv2.namedWindow("win")
-    cam = cv2.VideoCapture(0)
+
+    #init pi camera
+    camera = PiCamera()
+    camera.resolution = (640, 480)
+    camera.framerate = 32
+    rawCapture = PiRGBArray(camera, size=(640, 480))
+    sleep(.5)
 
     #init pygame
     pygame.init()
@@ -53,9 +34,9 @@ def testBlobs():
     #Made thread reference so it can be shut down later
     playThread = None
     try:
-        while(1):
+        for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
             #Load image
-            img = cam.read()
+            img = frame.array
             pimg = preprocessImage(img)
 
             #get dims
